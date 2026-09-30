@@ -30,19 +30,19 @@ of 0.8403–0.8728. Full experiment notes are in [TRAINING_LOG.md](TRAINING_LOG.
 
 ChestMem-AD uses two reconstruction ensembles. Module A learns from the
 known-normal set plus an unlabeled mixture, while module B learns only from
-known-normal images. Each module contains five independently initialized
+known-normal images. Each module contains multiple independently initialized
 autoencoders. Their disagreement provides the anomaly signal.
 
 ```mermaid
 flowchart LR
-    X["Chest X-ray<br/>1 × 64 × 64"]
-    A["Module A<br/>5 memory autoencoders<br/>normal + unlabeled"]
-    B["Module B<br/>5 memory autoencoders<br/>normal only"]
+    X["Chest X-ray"]
+    A["Module A<br/>memory autoencoder ensemble<br/>normal + unlabeled"]
+    B["Module B<br/>memory autoencoder ensemble<br/>normal only"]
     MA["Mean reconstruction A"]
     MB["Mean reconstruction B"]
     INTER["Inter map<br/>|mean A - mean B|"]
     INTRA["Intra map<br/>std of module B"]
-    ASR["Residual ASR<br/>2 → 32 → 32 → 1"]
+    ASR["Residual anomaly refinement"]
     SCORE["Anomaly map<br/>and image score"]
 
     X --> A --> MA --> INTER
@@ -54,34 +54,19 @@ flowchart LR
 
 ### Memory autoencoder
 
-The final configuration uses 64×64 grayscale input, a 128-dimensional latent
-vector, eight learned memory prototypes, and no skip connections. Omitting
-skips prevents the decoder from copying local abnormalities directly from the
-encoder.
+Each ensemble member follows an encoder-memory-decoder architecture:
 
-| Stage | Operation | Output shape |
-|---|---|---|
-| Input | normalized grayscale image | `1 × 64 × 64` |
-| Encoder 1 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `32 × 32 × 32` |
-| Encoder 2 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `64 × 16 × 16` |
-| Encoder 3 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `128 × 8 × 8` |
-| Encoder 4 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `256 × 4 × 4` |
-| Bottleneck | flatten → 1024 → 128 | `128` |
-| Memory | softmax attention over `8 × 128` prototypes | `128` |
-| Decoder input | 128 → 1024 → 4096, reshape | `256 × 4 × 4` |
-| Decoder 1 | transposed convolution + fusion block | `128 × 8 × 8` |
-| Decoder 2 | transposed convolution + fusion block | `64 × 16 × 16` |
-| Decoder 3 | transposed convolution + fusion block | `32 × 32 × 32` |
-| Output | `ConvTranspose4×4/s2` | `1 × 64 × 64` |
+1. The **encoder** compresses a chest X-ray into a global latent
+   representation.
+2. The **memory bank** reconstructs that representation from learned normal
+   prototypes. Attention selects the prototypes that best match the image.
+3. The **decoder** converts the memory-filtered representation back into an
+   image.
 
-One memory autoencoder has 10,234,816 trainable parameters. Training creates
-five members for each module; inference therefore evaluates ten independently
-trained autoencoders.
-
-For latent vector `z` and prototype matrix `M`, the memory layer computes
-`a = softmax(z Mᵀ)` and returns `z_mem = a M`. The optional entropy term
-encourages concentrated prototype selection. The released Memory-8 setting
-uses an entropy weight of `0.0002` and no hard-shrink threshold.
+The final detector omits encoder-to-decoder skip connections. This forces
+information through the latent memory bottleneck and reduces direct copying of
+local abnormalities. An entropy regularizer encourages each image to use a
+small, relevant subset of the memory prototypes.
 
 ### Discrepancy maps and scores
 
@@ -91,20 +76,18 @@ ensembles. The detector computes three maps:
 - **Reconstruction:** squared error between the input and the mean of `R_B`.
 - **Inter-discrepancy:** absolute difference between the means of `R_A` and
   `R_B`.
-- **Intra-discrepancy:** pixelwise standard deviation among the five members
-  of `R_B`.
+- **Intra-discrepancy:** pixelwise variation among the members of `R_B`.
 
-For the raw Memory-8 result, 8×8 average pooling suppresses isolated pixel
-noise before the spatial mean becomes the image-level score. Heatmaps are then
-upsampled to the input resolution for display.
+Spatial pooling suppresses isolated pixel noise before the anomaly map is
+reduced to an image-level score. The map is resized to the input resolution for
+visualization.
 
 ### Residual anomaly-score refinement
 
 ASR keeps both reconstruction ensembles frozen. It receives the unpooled
-inter- and intra-discrepancy maps as two input channels. Its three 3×3
-convolutions have channel widths `2 → 32 → 32 → 1`, with BatchNorm and ReLU
-after the first two layers. This refinement network has 10,209 trainable
-parameters.
+inter- and intra-discrepancy maps as two input channels. A lightweight
+convolutional network combines their local spatial patterns and predicts a
+refined anomaly map.
 
 ASR predicts a residual correction to a monotonic transform of the raw inter
 map, so the final output retains the original discrepancy evidence. Training
