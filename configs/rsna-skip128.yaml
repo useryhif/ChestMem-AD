@@ -1,0 +1,29 @@
+data:
+  root: ../datasets/Med-AD_v1/RSNA
+  manifest: data.json
+  image_dir: images
+  image_size: 128
+  extra_unlabeled: 4000
+  anomaly_ratio: 0.6
+  workers: 0
+  cache_images: true
+  shuffle_unlabeled_pool: false
+model:
+  architecture: skip
+  latent_size: 128
+  width_multiplier: 1.0
+train:
+  batch_size: 128
+  learning_rate: 0.0002
+  weight_decay: 0.0
+  epochs: 100
+  ensemble_size: 3
+  seed: 42
+  resume: true
+  optimizer: adam
+  beta1: 0.5
+  beta2: 0.999
+  checkpoint_interval: 10
+experiment:
+  output_dir: ../outputs/rsna-skip128
+  device: auto

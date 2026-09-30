@@ -1,0 +1,28 @@
+data:
+  # Relative paths are resolved from this configuration file.
+  root: ../datasets/RSNA
+  manifest: data.json
+  image_dir: images
+  image_size: 64
+  # This Zenodo RSNA split provides 3,851 known-normal training images and
+  # 1,000 normal + 1,000 abnormal test images, without an unlabeled train pool.
+  # Set this to a positive value only when using a manifest with train.unlabeled.
+  extra_unlabeled: 0
+  anomaly_ratio: 0.6
+  workers: 0
+
+model:
+  latent_size: 16
+  width_multiplier: 1.0
+
+train:
+  batch_size: 64
+  learning_rate: 0.0005
+  weight_decay: 0.0
+  epochs: 250
+  ensemble_size: 3
+  seed: 42
+
+experiment:
+  output_dir: ../outputs/rsna-ae
+  device: auto

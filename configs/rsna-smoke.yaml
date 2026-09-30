@@ -1,0 +1,21 @@
+data:
+  root: ../datasets/RSNA
+  manifest: data.json
+  image_dir: images
+  image_size: 64
+  extra_unlabeled: 0
+  anomaly_ratio: 0.0
+  workers: 0
+model:
+  latent_size: 16
+  width_multiplier: 0.5
+train:
+  batch_size: 128
+  learning_rate: 0.0005
+  weight_decay: 0.0
+  epochs: 1
+  ensemble_size: 1
+  seed: 42
+experiment:
+  output_dir: ../outputs/rsna-smoke
+  device: cpu

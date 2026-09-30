@@ -1,0 +1,29 @@
+data:
+  root: ../datasets/Med-AD_v1/RSNA
+  manifest: data.json
+  image_dir: images
+  image_size: 64
+  extra_unlabeled: 4000
+  anomaly_ratio: 0.6
+  workers: 0
+  cache_images: true
+  shuffle_unlabeled_pool: false
+model:
+  architecture: paper
+  latent_size: 16
+  width_multiplier: 1.0
+train:
+  batch_size: 64
+  learning_rate: 0.0005
+  weight_decay: 0.0
+  epochs: 250
+  ensemble_size: 3
+  seed: 42
+  resume: true
+  optimizer: adam
+  beta1: 0.5
+  beta2: 0.999
+  checkpoint_interval: 10
+experiment:
+  output_dir: ../outputs/rsna-paper
+  device: auto
