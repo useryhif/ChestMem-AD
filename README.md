@@ -28,16 +28,90 @@ of 0.8403–0.8728. Full experiment notes are in [TRAINING_LOG.md](TRAINING_LOG.
 
 ## Method
 
-ChestMem-AD trains two reconstruction ensembles:
+ChestMem-AD uses two reconstruction ensembles. Module A learns from the
+known-normal set plus an unlabeled mixture, while module B learns only from
+known-normal images. Each module contains five independently initialized
+autoencoders. Their disagreement provides the anomaly signal.
 
-- module A learns from known-normal and unlabeled mixed images;
-- module B learns only from known-normal images;
-- differences between and within the ensembles become anomaly scores.
+```mermaid
+flowchart LR
+    X["Chest X-ray<br/>1 × 64 × 64"]
+    A["Module A<br/>5 memory autoencoders<br/>normal + unlabeled"]
+    B["Module B<br/>5 memory autoencoders<br/>normal only"]
+    MA["Mean reconstruction A"]
+    MB["Mean reconstruction B"]
+    INTER["Inter map<br/>|mean A - mean B|"]
+    INTRA["Intra map<br/>std of module B"]
+    ASR["Residual ASR<br/>2 → 32 → 32 → 1"]
+    SCORE["Anomaly map<br/>and image score"]
 
-Our final autoencoder routes its 128-dimensional latent through eight learned
-memory prototypes before decoding. This constrains reconstruction to common
-training patterns. A small residual ASR network then refines the inter- and
-intra-discrepancy maps while retaining the original spatial evidence.
+    X --> A --> MA --> INTER
+    X --> B --> MB --> INTER
+    B --> INTRA
+    INTER --> ASR
+    INTRA --> ASR --> SCORE
+```
+
+### Memory autoencoder
+
+The final configuration uses 64×64 grayscale input, a 128-dimensional latent
+vector, eight learned memory prototypes, and no skip connections. Omitting
+skips prevents the decoder from copying local abnormalities directly from the
+encoder.
+
+| Stage | Operation | Output shape |
+|---|---|---|
+| Input | normalized grayscale image | `1 × 64 × 64` |
+| Encoder 1 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `32 × 32 × 32` |
+| Encoder 2 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `64 × 16 × 16` |
+| Encoder 3 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `128 × 8 × 8` |
+| Encoder 4 | `Conv4×4/s2`, BatchNorm, LeakyReLU | `256 × 4 × 4` |
+| Bottleneck | flatten → 1024 → 128 | `128` |
+| Memory | softmax attention over `8 × 128` prototypes | `128` |
+| Decoder input | 128 → 1024 → 4096, reshape | `256 × 4 × 4` |
+| Decoder 1 | transposed convolution + fusion block | `128 × 8 × 8` |
+| Decoder 2 | transposed convolution + fusion block | `64 × 16 × 16` |
+| Decoder 3 | transposed convolution + fusion block | `32 × 32 × 32` |
+| Output | `ConvTranspose4×4/s2` | `1 × 64 × 64` |
+
+One memory autoencoder has 10,234,816 trainable parameters. Training creates
+five members for each module; inference therefore evaluates ten independently
+trained autoencoders.
+
+For latent vector `z` and prototype matrix `M`, the memory layer computes
+`a = softmax(z Mᵀ)` and returns `z_mem = a M`. The optional entropy term
+encourages concentrated prototype selection. The released Memory-8 setting
+uses an entropy weight of `0.0002` and no hard-shrink threshold.
+
+### Discrepancy maps and scores
+
+Let `R_A` and `R_B` be the reconstruction stacks produced by the two
+ensembles. The detector computes three maps:
+
+- **Reconstruction:** squared error between the input and the mean of `R_B`.
+- **Inter-discrepancy:** absolute difference between the means of `R_A` and
+  `R_B`.
+- **Intra-discrepancy:** pixelwise standard deviation among the five members
+  of `R_B`.
+
+For the raw Memory-8 result, 8×8 average pooling suppresses isolated pixel
+noise before the spatial mean becomes the image-level score. Heatmaps are then
+upsampled to the input resolution for display.
+
+### Residual anomaly-score refinement
+
+ASR keeps both reconstruction ensembles frozen. It receives the unpooled
+inter- and intra-discrepancy maps as two input channels. Its three 3×3
+convolutions have channel widths `2 → 32 → 32 → 1`, with BatchNorm and ReLU
+after the first two layers. This refinement network has 10,209 trainable
+parameters.
+
+ASR predicts a residual correction to a monotonic transform of the raw inter
+map, so the final output retains the original discrepancy evidence. Training
+uses normal chest X-rays with randomly placed donor-image patch blends as
+synthetic anomalies. A positive-weighted focal loss supervises the synthetic
+patch mask. At inference, the sigmoid output is averaged spatially to produce
+one anomaly score per image.
 
 ## Installation
 
@@ -123,7 +197,7 @@ Generated datasets, checkpoints, metrics, and visualizations are written under
 ```text
 configs/          experiment configurations and ablations
 scripts/          evaluation, conversion, analysis, and rendering utilities
-src/chestmem_ad/         maintained training and inference package
+src/chestmem_ad/  maintained training and inference package
 tests/            CPU synthetic-data smoke tests
 TRAINING_LOG.md   complete experiment record and decisions
 ```
