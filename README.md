@@ -4,24 +4,21 @@ A reproducible PyTorch project for chest X-ray anomaly detection using
 dual-distribution discrepancy, a compact memory bank, and residual anomaly-score
 refinement.
 
-The repository contains a paper-compatible baseline, a verified RSNA
-reproduction, ablation configurations, held-out evaluation tools, and the final
-ChestMem-AD experiment. It is intended for research and education; its outputs
-are not clinical diagnoses.
+The repository contains the training pipeline, evaluation tools, ablation
+configurations, and residual anomaly refinement stage used by ChestMem-AD. It
+is intended for research and education; its outputs are not clinical diagnoses.
 
 ## Results
 
-All results use the Med-AD v1 RSNA split. The paper-test column uses the same
-1,000 normal + 1,000 abnormal test images as the original work. The independent
-column uses another disjoint 1,000 + 1,000 images that were not used for
-training or model selection.
+All results use the Med-AD v1 RSNA split. The test set contains 1,000 normal and
+1,000 abnormal images. The independent set contains another disjoint 1,000
+normal and 1,000 abnormal images that were not used for training or model
+selection.
 
-| Method | Paper-test AUROC | Paper-test AP | Independent AUROC | Independent AP |
+| ChestMem-AD stage | Test AUROC | Test AP | Independent AUROC | Independent AP |
 |---|---:|---:|---:|---:|
-| Original paper, inter discrepancy | 0.815 | — | — | — |
-| Reproduced paper model, inter | 0.8315 | 0.8204 | — | — |
-| Memory-8 ensemble, inter (`pool=8`) | 0.8255 | 0.8222 | 0.8407 | 0.8333 |
-| **Memory-8 + residual ASR** | **0.8373** | **0.8425** | **0.8574** | **0.8681** |
+| Memory ensemble | 0.8255 | 0.8222 | 0.8407 | 0.8333 |
+| **Memory ensemble + residual ASR** | **0.8373** | **0.8425** | **0.8574** | **0.8681** |
 
 The independent ASR AUROC has a stratified bootstrap 95% confidence interval
 of 0.8403–0.8728. Full experiment notes are in [TRAINING_LOG.md](TRAINING_LOG.md).
@@ -63,10 +60,8 @@ Each ensemble member follows an encoder-memory-decoder architecture:
 3. The **decoder** converts the memory-filtered representation back into an
    image.
 
-The final detector omits encoder-to-decoder skip connections. This forces
-information through the latent memory bottleneck and reduces direct copying of
-local abnormalities. An entropy regularizer encourages each image to use a
-small, relevant subset of the memory prototypes.
+An entropy regularizer encourages each image to use a small, relevant subset
+of the memory prototypes.
 
 ### Discrepancy maps and scores
 
@@ -90,7 +85,7 @@ convolutional network combines their local spatial patterns and predicts a
 refined anomaly map.
 
 ASR predicts a residual correction to a monotonic transform of the raw inter
-map, so the final output retains the original discrepancy evidence. Training
+map, so the final output retains the raw discrepancy evidence. Training
 uses normal chest X-rays with randomly placed donor-image patch blends as
 synthetic anomalies. A positive-weighted focal loss supervises the synthetic
 patch mask. At inference, the sigmoid output is averaged spatially to produce
@@ -128,18 +123,7 @@ The processed Med-AD benchmark is available through
 The manifest must contain known-normal training images, normal/abnormal
 unlabeled images, and normal/abnormal test images.
 
-## Reproduce the paper baseline
-
-```bash
-chestmem-ad --config configs/rsna-paper.yaml train --module a
-chestmem-ad --config configs/rsna-paper.yaml train --module b
-chestmem-ad --config configs/rsna-paper.yaml evaluate
-```
-
-This configuration reproduces the paper architecture: 64×64 images, latent
-size 16, three members per module, and 250 epochs.
-
-## Train the Memory-8 model
+## Train ChestMem-AD
 
 ```bash
 chestmem-ad --config configs/rsna-noskip64-mem8.yaml train --module a
@@ -197,9 +181,7 @@ their checkpoints, and verifies all anomaly scores.
 ## Limitations
 
 - Image-level anomaly detection has been independently validated; pixel-level
-  localization has not been measured because the Med-AD archive does not
-  include the original RSNA bounding-box CSV.
+  localization has not been measured because the dataset archive does not
+  include localization annotations.
 - Extreme framing differences, black borders, and unusually small radiographs
   can produce false positives.
-- The 128×128 and unrestricted skip-connection experiments did not improve
-  detection and are retained only as ablations.
