@@ -6,7 +6,7 @@ import random
 from pathlib import Path
 
 
-def create_ddad_split(
+def create_chestmem_split(
     source: Path,
     output: Path,
     unlabeled_per_class: int,
@@ -48,7 +48,7 @@ def main() -> None:
     parser.add_argument("--unlabeled-per-class", type=int, default=500)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
-    create_ddad_split(args.source, args.output, args.unlabeled_per_class, args.seed)
+    create_chestmem_split(args.source, args.output, args.unlabeled_per_class, args.seed)
 
 
 if __name__ == "__main__":

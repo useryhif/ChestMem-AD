@@ -22,7 +22,7 @@ dev = ["pytest>=7.4", "ruff>=0.5"]
 dicom = ["pydicom>=2.4"]
 
 [project.scripts]
-chestmem-ad = "ddad.cli:main"
+chestmem-ad = "chestmem_ad.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

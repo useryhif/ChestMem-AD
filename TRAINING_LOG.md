@@ -200,11 +200,11 @@ $env:PYTHONPATH='src'
 
 | 文件 | 变更 |
 |---|---|
-| `src/ddad/model.py` | 新增 `PaperAutoencoder`（论文原版 AE）、`SkipAutoencoder`（128px/可开关跳跃/可选 resample 解码器）、`MemoryBank`（MemAE 注意力记忆库 + 熵） |
-| `src/ddad/scoring.py` | 新增统一评分函数 `anomaly_maps`（支持 N×N 池化与显示上采样） |
-| `src/ddad/engine.py` | 训练支持熵正则、优化器/热启动续训；评估接入 `scoring.pool`、三张热图 + 双重建面板 |
-| `src/ddad/config.py` | 新增 `model.memory_size/shrink_threshold/architecture`、`train.entropy_loss_weight/checkpoint_interval`、`scoring.pool` |
-| `src/ddad/visualize.py` | 面板重构（Input/Recon A/Recon B/误差/差异/B 方差），平滑上采样，色标从测试集分位数估计 |
+| `src/chestmem_ad/model.py` | 新增 `PaperAutoencoder`（论文原版 AE）、`SkipAutoencoder`（128px/可开关跳跃/可选 resample 解码器）、`MemoryBank`（MemAE 注意力记忆库 + 熵） |
+| `src/chestmem_ad/scoring.py` | 新增统一评分函数 `anomaly_maps`（支持 N×N 池化与显示上采样） |
+| `src/chestmem_ad/engine.py` | 训练支持熵正则、优化器/热启动续训；评估接入 `scoring.pool`、三张热图 + 双重建面板 |
+| `src/chestmem_ad/config.py` | 新增 `model.memory_size/shrink_threshold/architecture`、`train.entropy_loss_weight/checkpoint_interval`、`scoring.pool` |
+| `src/chestmem_ad/visualize.py` | 面板重构（Input/Recon A/Recon B/误差/差异/B 方差），平滑上采样，色标从测试集分位数估计 |
 | `scripts/` | 热启动转换与上述全部评测/渲染脚本（见第 4 节） |
 
 ---

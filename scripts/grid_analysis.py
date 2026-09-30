@@ -8,9 +8,9 @@ import numpy as np
 import torch
 from PIL import Image
 
-from ddad.config import load_config
-from ddad.data import make_loader
-from ddad.engine import _load_ensemble, resolve_device
+from chestmem_ad.config import load_config
+from chestmem_ad.data import make_loader
+from chestmem_ad.engine import _load_ensemble, resolve_device
 
 
 def spectrum_peaks(patch: np.ndarray) -> list[tuple[int, int, float]]:

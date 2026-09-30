@@ -123,7 +123,7 @@ Generated datasets, checkpoints, metrics, and visualizations are written under
 ```text
 configs/          experiment configurations and ablations
 scripts/          evaluation, conversion, analysis, and rendering utilities
-src/ddad/         maintained training and inference package
+src/chestmem_ad/         maintained training and inference package
 tests/            CPU synthetic-data smoke tests
 TRAINING_LOG.md   complete experiment record and decisions
 ```

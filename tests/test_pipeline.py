@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from ddad.config import load_config
-from ddad.data import ChestXrayDataset
-from ddad.engine import evaluate, train
+from chestmem_ad.config import load_config
+from chestmem_ad.data import ChestXrayDataset
+from chestmem_ad.engine import evaluate, train
 
 
 def _workspace(name: str) -> Path:

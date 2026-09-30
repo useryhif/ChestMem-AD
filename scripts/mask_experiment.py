@@ -8,10 +8,10 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score
 
-from ddad.config import load_config
-from ddad.data import make_loader
-from ddad.engine import _load_ensemble, resolve_device
-from ddad.scoring import anomaly_maps
+from chestmem_ad.config import load_config
+from chestmem_ad.data import make_loader
+from chestmem_ad.engine import _load_ensemble, resolve_device
+from chestmem_ad.scoring import anomaly_maps
 
 
 def main() -> None:

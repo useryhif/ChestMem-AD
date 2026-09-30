@@ -18,9 +18,9 @@ from PIL import Image
 from sklearn.metrics import average_precision_score, roc_auc_score
 from torch.utils.data import DataLoader, Dataset
 
-from ddad.config import load_config
-from ddad.engine import _load_ensemble, resolve_device
-from ddad.scoring import anomaly_maps
+from chestmem_ad.config import load_config
+from chestmem_ad.engine import _load_ensemble, resolve_device
+from chestmem_ad.scoring import anomaly_maps
 
 
 class HeldoutDataset(Dataset):

@@ -8,9 +8,9 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from ddad.config import load_config
-from ddad.data import make_loader
-from ddad.engine import _load_ensemble, resolve_device
+from chestmem_ad.config import load_config
+from chestmem_ad.data import make_loader
+from chestmem_ad.engine import _load_ensemble, resolve_device
 
 
 def class_stats(config_path: str, batches_per_class: int = 3, batch_size: int = 100) -> None:

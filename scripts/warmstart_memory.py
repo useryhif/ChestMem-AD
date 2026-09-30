@@ -11,8 +11,8 @@ from pathlib import Path
 
 import torch
 
-from ddad.config import load_config
-from ddad.engine import build_model
+from chestmem_ad.config import load_config
+from chestmem_ad.engine import build_model
 
 
 def main() -> None:
